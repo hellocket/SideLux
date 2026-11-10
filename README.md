@@ -40,15 +40,33 @@
 brew install --cask hellocket/tap/sidelux
 ```
 
+Homebrew clears macOS's download quarantine, so SideLux opens right away without a warning.
 Update with `brew upgrade --cask sidelux`; uninstall with `brew uninstall --cask sidelux` (add `--zap` to also remove settings).
 
 **Or download it manually**
 
 1. Download `SideLux-x.y.z.dmg` from the [latest release](https://github.com/hellocket/SideLux/releases/latest) and open it.
 2. Drag **SideLux** onto the **Applications** shortcut. (A `.zip` is also available.)
-3. SideLux isn't notarized, so the first launch needs one extra step:
-   right-click **SideLux.app** → **Open** → **Open**.
-   If macOS still refuses, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+3. Open SideLux from Applications. The first time, see below.
+
+### First launch: "Apple could not verify SideLux…"
+
+SideLux isn't notarized by Apple (that needs a paid developer account), so macOS blocks it the first
+time you open a downloaded copy. You only have to allow it once:
+
+1. Open SideLux. When the warning appears, click **Done** (not *Move to Trash*).
+2. Open **System Settings → Privacy & Security** and scroll down to **Security**.
+   You can jump straight there by running this in Terminal:
+   ```bash
+   open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+   ```
+3. Next to *"SideLux" was blocked to protect your Mac*, click **Open Anyway**, then confirm with your password or Touch ID.
+
+SideLux opens and won't ask again. Prefer the Terminal? This does the same in one step:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/SideLux.app
+```
 
 ## Usage
 
@@ -74,6 +92,7 @@ git clone https://github.com/hellocket/SideLux.git
 cd SideLux
 ./build.sh            # → build/SideLux.app
 ./build.sh release    # → build/SideLux-<version>.zip and .dmg, ready to attach to a release
+./build.sh dmg        # rebuild only the .dmg from the existing build
 ./build.sh icon       # regenerate Resources/AppIcon.icns from Scripts/make-icon.swift
 ```
 
@@ -98,6 +117,7 @@ Each local build is ad-hoc signed, so macOS treats it as a new app: remove the o
 ```
 Sources/main.swift          the whole app
 Scripts/make-icon.swift     draws the app icon
+Scripts/make-dmg-background.swift   draws the DMG window background (install + first-launch steps)
 Resources/AppIcon.icns      generated app icon
 docs/icon.png               1024 px icon (also used by this README)
 build.sh                    build, package and icon script

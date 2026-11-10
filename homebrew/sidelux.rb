@@ -1,6 +1,6 @@
 cask "sidelux" do
-  version "1.0.0"
-  sha256 "b40c465f142ed165fcc7cf4a37e2b82bfd2b609fbc76213f10148a384b98a9f0"
+  version "1.0.1"
+  sha256 "6c39b32f0dea6723ae104b871b3c3343713898d89ed3cb8699e67af6af5da915"
 
   url "https://github.com/hellocket/SideLux/releases/download/v#{version}/SideLux-#{version}.zip"
   name "SideLux"
@@ -12,13 +12,20 @@ cask "sidelux" do
 
   app "SideLux.app"
 
+  # SideLux isn't notarized by Apple. Clear the download quarantine so it opens
+  # without the "can't verify" warning (the caveats below say so).
+  postflight do
+    system_command "/usr/bin/xattr",
+                   args: ["-dr", "com.apple.quarantine", "#{appdir}/SideLux.app"]
+  end
+
   uninstall quit: "io.github.hellocket.sidelux"
 
   zap trash: "~/Library/Preferences/io.github.hellocket.sidelux.plist"
 
   caveats <<~EOS
-    SideLux is not notarized by Apple. If macOS says it can't be opened,
-    go to System Settings > Privacy & Security and click "Open Anyway".
+    SideLux is not notarized by Apple, so this cask removed macOS's download
+    quarantine from it. You can open it right away from Applications.
 
     To use the keyboard shortcuts (⌃F1/⌃F2 brightness, ⌃F10–F12 volume),
     turn on "Keyboard Shortcuts" in the menu and allow SideLux under

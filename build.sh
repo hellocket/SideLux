@@ -9,21 +9,65 @@
 set -e
 cd "${0:a:h}"
 
-VERSION=1.0.0
-BUILD_NUMBER=1
+VERSION=1.0.1
+BUILD_NUMBER=2
 BUNDLE_ID=io.github.hellocket.sidelux
 OUT=build
 APP=$OUT/SideLux.app
 
-# Disk image showing the app next to an Applications shortcut, for drag-and-drop install
+# Disk image: the app next to an Applications shortcut, on a background that also explains
+# how to get past the "can't verify" warning on first launch (Scripts/make-dmg-background.swift)
 make_dmg() {
-  local DMG=$OUT/SideLux-$VERSION.dmg STAGE=$(mktemp -d)/SideLux
-  mkdir -p $STAGE
+  local DMG=$OUT/SideLux-$VERSION.dmg VOL="SideLux $VERSION"
+  local WORK=$(mktemp -d) STAGE RW MNT
+  STAGE=$WORK/stage; RW=$WORK/rw.dmg
+  mkdir -p $STAGE/.background
   ditto $APP $STAGE/SideLux.app
   ln -s /Applications $STAGE/Applications
+  swift Scripts/make-dmg-background.swift $WORK >/dev/null
+  tiffutil -cathidpicheck $WORK/background.png $WORK/background@2x.png -out $STAGE/.background/background.tiff >/dev/null 2>&1
+  chflags hidden $STAGE/.background   # stays hidden even with "show hidden files" on
+
+  # A previous image with the same name may still be mounted
+  [[ -d "/Volumes/$VOL" ]] && hdiutil detach "/Volumes/$VOL" -force >/dev/null 2>&1
+
+  hdiutil create -volname "$VOL" -srcfolder $STAGE -fs HFS+ -format UDRW -ov $RW >/dev/null 2>&1
+  MNT=$(hdiutil attach -readwrite -noverify -noautoopen $RW 2>/dev/null | grep -o '/Volumes/.*$')
+  # Window layout (needs permission for the terminal to control Finder; falls back to a plain window)
+  osascript >/dev/null 2>&1 <<OSA || echo "Note: couldn't style the DMG window (Finder automation not allowed)"
+tell application "Finder"
+  tell disk "$VOL"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    try
+      set pathbar visible of container window to false
+    end try
+    set bounds of container window to {200, 120, 800, 588}
+    set opts to icon view options of container window
+    set arrangement of opts to not arranged
+    set icon size of opts to 100
+    set text size of opts to 13
+    set background picture of opts to file ".background:background.tiff"
+    -- Finder draws icons ~30pt below the given y, so 120 lands on the background's arrow at 150
+    set position of item "SideLux.app" of container window to {160, 120}
+    set position of item "Applications" of container window to {440, 120}
+    try
+      set position of item ".background" of container window to {900, 900}
+    end try
+    update without registering applications
+    delay 1
+    close
+  end tell
+end tell
+OSA
+  rm -rf "$MNT/.fseventsd"
+  sync
+  hdiutil detach "$MNT" >/dev/null 2>&1 || hdiutil detach "$MNT" -force >/dev/null 2>&1
   rm -f $DMG
-  hdiutil create -volname "SideLux $VERSION" -srcfolder $STAGE -fs HFS+ -format UDZO -ov $DMG >/dev/null 2>&1
-  rm -rf ${STAGE:h}
+  hdiutil convert $RW -format UDZO -imagekey zlib-level=9 -o $DMG >/dev/null 2>&1
+  rm -rf $WORK
   echo "Packaged $DMG ($(du -sh $DMG | cut -f1))"
 }
 
