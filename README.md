@@ -98,8 +98,10 @@ cd SideLux
 
 Only the Xcode Command Line Tools are needed (`xcode-select --install`).
 
-Each local build is ad-hoc signed, so macOS treats it as a new app: remove the old SideLux entry under
-**Accessibility** and add the new build again to keep using the shortcuts.
+Release builds are signed with the maintainer's "SideLux Code Signing" certificate, so the Accessibility
+permission carries over between versions. Without that certificate in your keychain, `build.sh` signs ad-hoc:
+macOS then treats each build as a new app, so remove the old SideLux entry under **Accessibility** and add the
+new build again to keep using the shortcuts.
 
 ## Releasing an update
 

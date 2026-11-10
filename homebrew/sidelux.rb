@@ -1,6 +1,6 @@
 cask "sidelux" do
-  version "1.0.1"
-  sha256 "6c39b32f0dea6723ae104b871b3c3343713898d89ed3cb8699e67af6af5da915"
+  version "1.0.2"
+  sha256 "19a2073207aeea8d427555185be6b298dfc11b59c8eaa39c49f9b05a2595f84b"
 
   url "https://github.com/hellocket/SideLux/releases/download/v#{version}/SideLux-#{version}.zip"
   name "SideLux"
@@ -14,9 +14,10 @@ cask "sidelux" do
 
   # SideLux isn't notarized by Apple. Clear the download quarantine so it opens
   # without the "can't verify" warning (the caveats below say so).
-  postflight do
-    system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/SideLux.app"]
+  postflight_steps do
+    run "/usr/bin/xattr",
+        args:         ["-dr", "com.apple.quarantine", "{{appdir}}/SideLux.app"],
+        must_succeed: false
   end
 
   uninstall quit: "io.github.hellocket.sidelux"

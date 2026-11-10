@@ -5,13 +5,16 @@
 #   ./build.sh dmg       package the existing build/SideLux.app as a .dmg (no rebuild)
 #   ./build.sh icon      regenerate Resources/AppIcon.icns from Scripts/make-icon.swift
 #
-# The app is ad-hoc signed, so macOS asks for Accessibility permission again after each build.
+# Signing: uses the "SideLux Code Signing" certificate from the login keychain when present, so every
+# build keeps the same identity and macOS keeps the Accessibility permission across updates.
+# Without it the app is ad-hoc signed, and each build needs the permission granted again.
 set -e
 cd "${0:a:h}"
 
-VERSION=1.0.1
-BUILD_NUMBER=2
+VERSION=1.0.2
+BUILD_NUMBER=3
 BUNDLE_ID=io.github.hellocket.sidelux
+SIGN_NAME="SideLux Code Signing"
 OUT=build
 APP=$OUT/SideLux.app
 
@@ -111,7 +114,13 @@ cat > $APP/Contents/Info.plist <<EOF
   <key>NSHumanReadableCopyright</key><string>MIT License</string>
 </dict></plist>
 EOF
-codesign --force --sign - $APP
+SIGN_ID=$(security find-identity -p codesigning 2>/dev/null | grep "\"$SIGN_NAME\"" | head -1 | awk '{print $2}')
+if [[ -n "$SIGN_ID" ]]; then
+  codesign --force --sign "$SIGN_ID" $APP
+else
+  echo "Warning: \"$SIGN_NAME\" certificate not found; signing ad-hoc (Accessibility permission won't survive updates)"
+  codesign --force --sign - $APP
+fi
 echo "Built $APP ($(du -sh $APP | cut -f1))"
 
 if [[ "$1" == "release" ]]; then
