@@ -1,7 +1,8 @@
 #!/bin/zsh
 # Build SideLux.app into ./build
 #   ./build.sh           build the app
-#   ./build.sh release   build and package build/SideLux-<version>.zip for GitHub Releases
+#   ./build.sh release   build, then package build/SideLux-<version>.zip and .dmg for GitHub Releases
+#   ./build.sh dmg       package the existing build/SideLux.app as a .dmg (no rebuild)
 #   ./build.sh icon      regenerate Resources/AppIcon.icns from Scripts/make-icon.swift
 #
 # The app is ad-hoc signed, so macOS asks for Accessibility permission again after each build.
@@ -13,6 +14,24 @@ BUILD_NUMBER=1
 BUNDLE_ID=io.github.hellocket.sidelux
 OUT=build
 APP=$OUT/SideLux.app
+
+# Disk image showing the app next to an Applications shortcut, for drag-and-drop install
+make_dmg() {
+  local DMG=$OUT/SideLux-$VERSION.dmg STAGE=$(mktemp -d)/SideLux
+  mkdir -p $STAGE
+  ditto $APP $STAGE/SideLux.app
+  ln -s /Applications $STAGE/Applications
+  rm -f $DMG
+  hdiutil create -volname "SideLux $VERSION" -srcfolder $STAGE -fs HFS+ -format UDZO -ov $DMG >/dev/null 2>&1
+  rm -rf ${STAGE:h}
+  echo "Packaged $DMG ($(du -sh $DMG | cut -f1))"
+}
+
+if [[ "$1" == "dmg" ]]; then
+  [[ -d $APP ]] || { echo "Run ./build.sh first"; exit 1; }
+  make_dmg
+  exit 0
+fi
 
 if [[ "$1" == "icon" ]]; then
   swift Scripts/make-icon.swift docs/icon.png >/dev/null
@@ -57,4 +76,5 @@ if [[ "$1" == "release" ]]; then
   ditto -c -k --keepParent $APP $ZIP
   echo "Packaged $ZIP ($(du -sh $ZIP | cut -f1)) — attach it to a GitHub release tagged v$VERSION"
   echo "SHA-256: $(shasum -a 256 $ZIP | cut -d' ' -f1)  ← put this in Casks/sidelux.rb"
+  make_dmg
 fi

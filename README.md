@@ -44,8 +44,8 @@ Update with `brew upgrade --cask sidelux`; uninstall with `brew uninstall --cask
 
 **Or download it manually**
 
-1. Download `SideLux-x.y.z.zip` from the [latest release](https://github.com/hellocket/SideLux/releases/latest) and unzip it.
-2. Move **SideLux.app** to your **Applications** folder.
+1. Download `SideLux-x.y.z.dmg` from the [latest release](https://github.com/hellocket/SideLux/releases/latest) and open it.
+2. Drag **SideLux** onto the **Applications** shortcut. (A `.zip` is also available.)
 3. SideLux isn't notarized, so the first launch needs one extra step:
    right-click **SideLux.app** → **Open** → **Open**.
    If macOS still refuses, go to **System Settings → Privacy & Security** and click **Open Anyway**.
@@ -73,7 +73,7 @@ It's reset when SideLux quits. Some displays have DDC/CI turned off in their on-
 git clone https://github.com/hellocket/SideLux.git
 cd SideLux
 ./build.sh            # → build/SideLux.app
-./build.sh release    # → build/SideLux-<version>.zip, ready to attach to a release
+./build.sh release    # → build/SideLux-<version>.zip and .dmg, ready to attach to a release
 ./build.sh icon       # regenerate Resources/AppIcon.icns from Scripts/make-icon.swift
 ```
 
@@ -86,7 +86,7 @@ Each local build is ad-hoc signed, so macOS treats it as a new app: remove the o
 
 1. Bump `VERSION` (and `BUILD_NUMBER`) in `build.sh`.
 2. Run `./build.sh release`; it prints the zip's SHA-256.
-3. Create a GitHub release tagged `vX.Y.Z` and attach `build/SideLux-X.Y.Z.zip`.
+3. Create a GitHub release tagged `vX.Y.Z` and attach `build/SideLux-X.Y.Z.dmg` and `build/SideLux-X.Y.Z.zip`.
 4. In [hellocket/homebrew-tap](https://github.com/hellocket/homebrew-tap), update `version` and `sha256` in `Casks/sidelux.rb`
    (a template lives in `homebrew/sidelux.rb`). Use the hash of the exact zip you uploaded: rebuilding changes it.
 
